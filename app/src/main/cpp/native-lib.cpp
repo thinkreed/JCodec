@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <string>
+#include "pcm_test.h"
 
 extern "C"
 JNIEXPORT jstring
