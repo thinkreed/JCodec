@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+apply plugin: 'bugly'
+
+bugly {
+    appId = '5fadd84e63' // 注册时分配的App ID
+    appKey = '1dd24514-e265-44e6-b1c1-c21f7cb9631c' // 注册时分配的App Key
+    debug = true
+}
+
 android {
     compileSdkVersion 26
     buildToolsVersion "26.0.2"
@@ -14,6 +22,10 @@ android {
             cmake {
                 cppFlags "-frtti -fexceptions"
             }
+        }
+        ndk {
+            // 设置支持的SO库架构
+            abiFilters 'armeabi' , 'x86', 'armeabi-v7a', 'x86_64', 'arm64-v8a'
         }
     }
     buildTypes {
@@ -30,11 +42,15 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.1', {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:appcompat-v7:26.1.0'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    testCompile 'junit:junit:4.12'
+    androidTestCompile('com.android.support.test.espresso:espresso-core:3.0.1', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+
+    // bugly
+    compile 'com.tencent.bugly:crashreport:2.6.5'
+    compile 'com.tencent.bugly:nativecrashreport:3.3.0'
 }
