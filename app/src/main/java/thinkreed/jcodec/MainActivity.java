@@ -1,7 +1,5 @@
 package thinkreed.jcodec;
 
-import com.tencent.bugly.crashreport.CrashReport;
-
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -25,7 +23,6 @@ public class MainActivity extends AppCompatActivity {
         // Example of a call to a native method
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText(stringFromJNI());
-        CrashReport.testJavaCrash();
     }
 
     private void checkPermission() {

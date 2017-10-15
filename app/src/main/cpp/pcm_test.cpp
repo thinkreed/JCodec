@@ -23,4 +23,5 @@ int pcms16le_split(char *url) {
     fclose(pcmSourceFile);
     fclose(output_left);
     fclose(output_right);
+    return 0;
 }
