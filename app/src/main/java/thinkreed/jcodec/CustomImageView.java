@@ -2,10 +2,9 @@ package thinkreed.jcodec;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
@@ -18,8 +17,6 @@ public class CustomImageView extends View {
 
     private Bitmap bitmap;
     private Paint paint;
-    private Rect srcRect;
-    private Rect dstRect;
 
     public CustomImageView(Context context) {
         this(context, null);
@@ -33,15 +30,21 @@ public class CustomImageView extends View {
     public CustomImageView(Context context,
                            @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        paint = new Paint();
+        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setFilterBitmap(true);
-        srcRect = new Rect(0, 0, 300, 300);
-        dstRect = new Rect(0, 0, 300, 300);
-        bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+        paint.setDither(true);
+
+        BitmapDrawable drawable = (BitmapDrawable) getResources().getDrawable(R.mipmap.cola);
+        bitmap = drawable.getBitmap();
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawBitmap(bitmap, srcRect, dstRect, paint);
+        canvas.drawBitmap(bitmap, 200, 300, paint);
     }
 }
