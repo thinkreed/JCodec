@@ -45,6 +45,6 @@ public class CustomImageView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawBitmap(bitmap, 200, 300, paint);
+        canvas.drawBitmap(bitmap, 0, 0, paint);
     }
 }
