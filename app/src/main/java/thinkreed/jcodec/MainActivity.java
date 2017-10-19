@@ -23,14 +23,18 @@ public class MainActivity extends AppCompatActivity {
         // Example of a call to a native method
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText(stringFromJNI());
+        AudioCapture.getInstance().start();
     }
 
     private void checkPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.INTERNET)
                 != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.READ_PHONE_STATE,
-                            Manifest.permission.READ_LOGS, Manifest.permission.ACCESS_NETWORK_STATE, Manifest
-                            .permission.INTERNET, Manifest.permission.ACCESS_WIFI_STATE},
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission
+                            .READ_PHONE_STATE,
+                            Manifest.permission.READ_LOGS, Manifest.permission
+                            .ACCESS_NETWORK_STATE, Manifest
+                            .permission.INTERNET, Manifest.permission.ACCESS_WIFI_STATE, Manifest
+                            .permission.RECORD_AUDIO},
                     0);
         }
     }
