@@ -3,6 +3,7 @@ package thinkreed.jcodec;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.concurrent.Future;
@@ -12,7 +13,8 @@ import java.util.concurrent.Future;
  */
 
 public class AudioCapture {
-    private static final int DEFAULT_SAMPLE_RATE = 44100;
+    private static int[] mSampleRates = new int[]{8000, 11025, 22050, 44100};
+    private static int DEFAULT_SAMPLE_RATE = 44100;
     private int audioMinBufferSize;
     private Future task;
     private byte[] audioBuffer;
@@ -23,11 +25,69 @@ public class AudioCapture {
     }
 
     private AudioCapture() {
+        if (!initAudioRecordWithDefaultSamepleRate()) {
+            findAvailableAudioRecord();
+        }
+        audioBuffer = new byte[audioMinBufferSize];
+    }
+
+    private boolean initAudioRecordWithDefaultSamepleRate() {
         audioMinBufferSize = AudioRecord.getMinBufferSize(DEFAULT_SAMPLE_RATE, AudioFormat
                 .CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
         audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, DEFAULT_SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, audioMinBufferSize);
-        audioBuffer = new byte[audioMinBufferSize];
+        return audioRecord.getState() == AudioRecord.STATE_INITIALIZED;
+    }
+
+    private void findAvailableAudioRecord() {
+        for (int rate : mSampleRates) {
+            tryEverySampleRate(rate);
+        }
+    }
+
+    private void tryEverySampleRate(int rate) {
+        for (short audioFormat : new short[]{AudioFormat.ENCODING_PCM_8BIT, AudioFormat
+                .ENCODING_PCM_16BIT}) {
+            if (tryEveryAudioFormat(rate, audioFormat)) {
+                return;
+            }
+        }
+    }
+
+    @Nullable
+    private boolean tryEveryAudioFormat(int rate, short audioFormat) {
+        for (short channelConfig : new short[]{AudioFormat.CHANNEL_IN_MONO, AudioFormat
+                .CHANNEL_IN_STEREO}) {
+
+            if (tryGetAudioRecord(rate, audioFormat, channelConfig)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Nullable
+    private boolean tryGetAudioRecord(int rate, short audioFormat, short channelConfig) {
+        try {
+            Log.d("thinkreed", "Attempting rate " + rate + "Hz, bits: " + audioFormat +
+                    ", channel: "
+                    + channelConfig);
+            audioMinBufferSize = AudioRecord.getMinBufferSize(rate, channelConfig,
+                    audioFormat);
+
+            if (audioMinBufferSize != AudioRecord.ERROR_BAD_VALUE) {
+                // check if we can instantiate and have a success
+                AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                        rate, channelConfig,
+                        audioFormat, audioMinBufferSize);
+
+                return recorder.getState() == AudioRecord.STATE_INITIALIZED;
+            }
+            return false;
+        } catch (Exception e) {
+            Log.e("thinkreed", rate + "Exception, keep trying.", e);
+            return false;
+        }
     }
 
     public void start() {
@@ -77,5 +137,7 @@ public class AudioCapture {
     public void stop() {
         audioRecord.stop();
         TaskExecutor.getInstance().cancel(task);
+        audioRecord.release();
+        audioRecord = null;
     }
 }

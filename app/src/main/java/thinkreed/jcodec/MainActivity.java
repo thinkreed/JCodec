@@ -44,4 +44,10 @@ public class MainActivity extends AppCompatActivity {
      * which is packaged with this application.
      */
     public native String stringFromJNI();
+
+    @Override
+    protected void onDestroy() {
+        AudioCapture.getInstance().stop();
+        super.onDestroy();
+    }
 }
