@@ -3,6 +3,7 @@ package thinkreed.jcodec;
 import android.util.Log;
 
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,6 +17,7 @@ public class AudioPersistenceProvider {
     private static int STATE_INITIALIZED = 0;
     private static int STATE_UNINITIALIZED = 1;
     private DataOutputStream dataOutputStream;
+    private FileOutputStream fileOutputStream;
     private int state = STATE_UNINITIALIZED;
 
     public static AudioPersistenceProvider getInstance() {
@@ -25,67 +27,74 @@ public class AudioPersistenceProvider {
     private AudioPersistenceProvider() {
     }
 
-    public void prepareToSaveWav(String path) {
+    public void prepareToSaveAudioData(String path) {
         releaseDataOutput();
         try {
-            dataOutputStream = new DataOutputStream(new FileOutputStream(path));
+            File file = new File(path);
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            fileOutputStream = new FileOutputStream(path);
+            dataOutputStream = new DataOutputStream(fileOutputStream);
         } catch (FileNotFoundException e) {
-            Log.d("thinkreed", "the file not exist");
+            Log.e("thinkreed", "the file not exist");
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e("thinkreed", "create file failed");
         }
     }
 
     private void writeWavFileHeader() throws IOException {
-        writeString("RIFF"); // chunk id
-        writeInt(36 + 3); // chunk size
-        writeString("WAVE"); // format
-        writeString("fmt "); // subchunk 1 id
-        writeInt(16); // subchunk 1 size
-        writeShort((short) 1); // audio format (1 = PCM)
-        writeShort((short) 1); // number of channels
-        writeInt(SAMPLE_RATE); // sample rate
-        writeInt(SAMPLE_RATE * 2); // byte rate
-        writeShort((short) 2); // block align
-        writeShort((short) 16); // bits per sample
-        writeString("data"); // subchunk 2 id
-        writeInt(rawData.length); // subchunk 2 size
-        // Audio data (conversion big endian -> little endian)
     }
 
     private void writeInt(final int value) throws IOException {
-        if (state == STATE_INITIALIZED) {
-            dataOutputStream.write(value >> 0);
-            dataOutputStream.write(value >> 8);
-            dataOutputStream.write(value >> 16);
-            dataOutputStream.write(value >> 24);
+        if (getState() == STATE_INITIALIZED) {
+            getDataOutputStream().write(value >> 0);
+            getDataOutputStream().write(value >> 8);
+            getDataOutputStream().write(value >> 16);
+            getDataOutputStream().write(value >> 24);
         }
     }
 
     private void writeShort(final short value) throws IOException {
-        if (state == STATE_INITIALIZED) {
-            dataOutputStream.write(value >> 0);
-            dataOutputStream.write(value >> 8);
+        if (getState() == STATE_INITIALIZED) {
+            getDataOutputStream().write(value >> 0);
+            getDataOutputStream().write(value >> 8);
         }
     }
 
     private void writeString(final String value) throws IOException {
-        if (state == STATE_INITIALIZED) {
+        if (getState() == STATE_INITIALIZED) {
             for (int i = 0; i < value.length(); i++) {
-                dataOutputStream.write(value.charAt(i));
+                getDataOutputStream().write(value.charAt(i));
             }
         }
 
     }
 
-    private void releaseDataOutput() {
-        if (dataOutputStream != null) {
+    public void releaseDataOutput() {
+        if (getDataOutputStream() != null) {
             try {
-                dataOutputStream.close();
+                getDataOutputStream().close();
+                fileOutputStream.close();
             } catch (IOException e) {
                 Log.e("thinkreed", "close data ioexception");
             } finally {
                 dataOutputStream = null;
+                fileOutputStream = null;
             }
         }
+    }
+
+    public DataOutputStream getDataOutputStream() {
+        return dataOutputStream;
+    }
+
+    public int getState() {
+        return state;
     }
 
     private static class Holder {

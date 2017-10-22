@@ -9,6 +9,8 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
+    private AudioCapture audioCapture;
+
     // Used to load the 'native-lib' library on application startup.
     static {
         System.loadLibrary("native-lib");
@@ -17,26 +19,44 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        checkPermission();
+        obtainPermission();
         setContentView(R.layout.activity_main);
 
         // Example of a call to a native method
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText(stringFromJNI());
-        AudioCapture.getInstance().start();
+        audioCapture = AudioCapture.getInstance();
+        audioCapture.start();
     }
 
-    private void checkPermission() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.INTERNET)
-                != PackageManager.PERMISSION_GRANTED) {
+    private void obtainPermission() {
+        if (checkPermission()) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission
                             .READ_PHONE_STATE,
                             Manifest.permission.READ_LOGS, Manifest.permission
                             .ACCESS_NETWORK_STATE, Manifest
                             .permission.INTERNET, Manifest.permission.ACCESS_WIFI_STATE, Manifest
-                            .permission.RECORD_AUDIO},
+                            .permission.RECORD_AUDIO, Manifest.permission.READ_EXTERNAL_STORAGE},
                     0);
         }
+    }
+
+    private boolean checkPermission() {
+        return ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.READ_PHONE_STATE)
+                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.READ_LOGS)
+                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_NETWORK_STATE)
+                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_WIFI_STATE)
+                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED;
     }
 
     /**
@@ -47,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        AudioCapture.getInstance().stop();
+        audioCapture.stop();
         super.onDestroy();
     }
 }
