@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.concurrent.Future;
 
 /**
@@ -21,6 +20,7 @@ public class AudioCapture {
     private Future task;
     private byte[] audioBuffer;
     private AudioRecord audioRecord;
+    private WavFileHeader wavFileHeader;
 
     public static AudioCapture getInstance() {
         return new AudioCapture();
@@ -38,6 +38,7 @@ public class AudioCapture {
                 .CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
         audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, DEFAULT_SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, audioMinBufferSize);
+        wavFileHeader = WavFileHeader.create(DEFAULT_SAMPLE_RATE, (short) 16, (short) 2);
         return audioRecord.getState() == AudioRecord.STATE_INITIALIZED;
     }
 
@@ -79,11 +80,14 @@ public class AudioCapture {
 
             if (audioMinBufferSize != AudioRecord.ERROR_BAD_VALUE) {
                 // check if we can instantiate and have a success
-                AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
                         rate, channelConfig,
                         audioFormat, audioMinBufferSize);
+                wavFileHeader = WavFileHeader.create(rate, (short) ((audioFormat == AudioFormat
+                        .ENCODING_PCM_8BIT) ? 8 : 16), (short) (channelConfig == AudioFormat
+                        .CHANNEL_IN_MONO ? 1 : 2));
 
-                return recorder.getState() == AudioRecord.STATE_INITIALIZED;
+                return audioRecord.getState() == AudioRecord.STATE_INITIALIZED;
             }
             return false;
         } catch (Exception e) {
@@ -94,7 +98,8 @@ public class AudioCapture {
 
     public void start() {
         audioRecord.startRecording();
-        AudioPersistenceProvider.getInstance().prepareToSaveAudioData("/sdcard/Music/test.pcm");
+        AudioPersistenceProvider.getInstance().prepareToSaveAudioData("/sdcard/Music/test.pcm",
+                wavFileHeader);
         task = TaskExecutor.getInstance().execute(new Runnable() {
             @Override
             public void run() {
@@ -135,12 +140,7 @@ public class AudioCapture {
     }
 
     private void consumePcmFrame(int pcmFrameSize) {
-        Log.d("thinkreed", "get pcm frame size is " + pcmFrameSize);
-        try {
-            AudioPersistenceProvider.getInstance().getDataOutputStream().write(audioBuffer, 0, pcmFrameSize);
-        } catch (IOException e) {
-            Log.e("thinkreed", "io exception when write pcm frame");
-        }
+        AudioPersistenceProvider.getInstance().write(audioBuffer, pcmFrameSize);
     }
 
     private FileOutputStream openFileOutputStream(String path) {
