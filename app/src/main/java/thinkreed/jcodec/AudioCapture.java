@@ -98,7 +98,7 @@ public class AudioCapture {
 
     public void start() {
         audioRecord.startRecording();
-        AudioPersistenceProvider.getInstance().prepareToSaveAudioData("/sdcard/Music/test.pcm",
+        AudioPersistenceProvider.getInstance().prepareToSaveAudioData("/sdcard/Music/test.wav",
                 wavFileHeader);
         task = TaskExecutor.getInstance().execute(new Runnable() {
             @Override

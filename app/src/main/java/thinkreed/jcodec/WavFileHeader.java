@@ -14,7 +14,7 @@ public class WavFileHeader {
 
     public static final String CHUNK_ID = "RIFF";
     public static final String FORMAT = "WAVE";
-    public static final String SUBCHUNK1_ID = "fmt";
+    public static final String SUBCHUNK1_ID = "fmt ";
     public static final int SUBCHUNK1_SIZE = 16;
     public static final String SUBCHUNK2_ID = "data";
     public static final short audioFormat = 1;
@@ -29,9 +29,9 @@ public class WavFileHeader {
     }
 
     private WavFileHeader(int sampleRate, short bitsPerSample, short numChannels) {
-        sampleRate = sampleRate;
-        bitsPerSample = (short) bitsPerSample;
-        numChannels = (short) numChannels;
+        this.sampleRate = sampleRate;
+        this.bitsPerSample = (short) bitsPerSample;
+        this.numChannels = (short) numChannels;
     }
 
     public short getAudioFormat() {

@@ -56,44 +56,19 @@ public class AudioPersistenceProvider {
     }
 
     private void writeWavFileHeader(WavFileHeader wavFileHeader) throws IOException {
-        writeString(WavFileHeader.CHUNK_ID); // chunk id
-        writeInt(wavFileHeader.getChunkSize()); // chunk size
-        writeString(WavFileHeader.FORMAT); // format
-        writeString(WavFileHeader.SUBCHUNK1_ID); // subchunk 1 id
-        writeInt(WavFileHeader.SUBCHUNK1_SIZE); // subchunk 1 size
-        writeShort(wavFileHeader.getAudioFormat()); // audio format (1 = PCM)
-        writeShort(wavFileHeader.getNumChannels()); // number of channels
-        writeInt(wavFileHeader.getSampleRate()); // sample rate
-        writeInt(wavFileHeader.getByteRate()); // byte rate
-        writeShort(wavFileHeader.getBlockAlign()); // block align
-        writeShort(wavFileHeader.getBitsPerSample()); // bits per sample
-        writeString(WavFileHeader.SUBCHUNK2_ID); // subchunk 2 id
-        writeInt(wavFileHeader.getSubChunk2Size()); // subchunk 2 size
-    }
-
-    private void writeInt(final int value) throws IOException {
-        if (getState() == STATE_INITIALIZED) {
-            getDataOutputStream().write(value >> 0);
-            getDataOutputStream().write(value >> 8);
-            getDataOutputStream().write(value >> 16);
-            getDataOutputStream().write(value >> 24);
-        }
-    }
-
-    private void writeShort(final short value) throws IOException {
-        if (getState() == STATE_INITIALIZED) {
-            getDataOutputStream().write(value >> 0);
-            getDataOutputStream().write(value >> 8);
-        }
-    }
-
-    private void writeString(final String value) throws IOException {
-        if (getState() == STATE_INITIALIZED) {
-            for (int i = 0; i < value.length(); i++) {
-                getDataOutputStream().write(value.charAt(i));
-            }
-        }
-
+        dataOutputStream.writeBytes(WavFileHeader.CHUNK_ID);
+        dataOutputStream.write(intToByteArray(wavFileHeader.getChunkSize()), 0, 4);
+        dataOutputStream.writeBytes(WavFileHeader.FORMAT);
+        dataOutputStream.writeBytes(WavFileHeader.SUBCHUNK1_ID);
+        dataOutputStream.write(intToByteArray(WavFileHeader.SUBCHUNK1_SIZE), 0, 4);
+        dataOutputStream.write(shortToByteArray(wavFileHeader.getAudioFormat()), 0, 2);
+        dataOutputStream.write(shortToByteArray(wavFileHeader.getNumChannels()), 0, 2);
+        dataOutputStream.write(intToByteArray(wavFileHeader.getSampleRate()), 0, 4);
+        dataOutputStream.write(intToByteArray(wavFileHeader.getByteRate()), 0, 4);
+        dataOutputStream.write(shortToByteArray(wavFileHeader.getBlockAlign()), 0, 2);
+        dataOutputStream.write(shortToByteArray(wavFileHeader.getBitsPerSample()), 0, 2);
+        dataOutputStream.writeBytes(WavFileHeader.SUBCHUNK2_ID);
+        dataOutputStream.write(intToByteArray(wavFileHeader.getSubChunk2Size()), 0, 4);
     }
 
     public void releaseDataOutput() {
@@ -141,6 +116,10 @@ public class AudioPersistenceProvider {
 
     private static byte[] intToByteArray(int data) {
         return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(data).array();
+    }
+
+    private static byte[] shortToByteArray(short data) {
+        return ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort(data).array();
     }
 
     private DataOutputStream getDataOutputStream() {
