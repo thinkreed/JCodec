@@ -24,14 +24,11 @@ public class WavFileHeader {
     private short bitsPerSample;
     private int subChunk2Size;
 
-    public static WavFileHeader create(int sampleRate, short bitsPerSample, short numChannels) {
-        return new WavFileHeader(sampleRate, bitsPerSample, numChannels);
+    public static WavFileHeader create() {
+        return new WavFileHeader();
     }
 
-    private WavFileHeader(int sampleRate, short bitsPerSample, short numChannels) {
-        this.sampleRate = sampleRate;
-        this.bitsPerSample = (short) bitsPerSample;
-        this.numChannels = (short) numChannels;
+    private WavFileHeader() {
     }
 
     public short getAudioFormat() {

@@ -38,7 +38,10 @@ public class AudioCapture {
                 .CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
         audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, DEFAULT_SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, audioMinBufferSize);
-        wavFileHeader = WavFileHeader.create(DEFAULT_SAMPLE_RATE, (short) 16, (short) 2);
+        wavFileHeader = WavFileHeader.create();
+        wavFileHeader.setNumChannels((short) 2);
+        wavFileHeader.setBitsPerSample((short) 16);
+        wavFileHeader.setSampleRate(DEFAULT_SAMPLE_RATE);
         return audioRecord.getState() == AudioRecord.STATE_INITIALIZED;
     }
 
@@ -83,10 +86,12 @@ public class AudioCapture {
                 audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
                         rate, channelConfig,
                         audioFormat, audioMinBufferSize);
-                wavFileHeader = WavFileHeader.create(rate, (short) ((audioFormat == AudioFormat
-                        .ENCODING_PCM_8BIT) ? 8 : 16), (short) (channelConfig == AudioFormat
+                wavFileHeader = WavFileHeader.create();
+                wavFileHeader.setSampleRate(rate);
+                wavFileHeader.setNumChannels((short) (channelConfig == AudioFormat
                         .CHANNEL_IN_MONO ? 1 : 2));
-
+                wavFileHeader.setBitsPerSample((short) ((audioFormat == AudioFormat
+                        .ENCODING_PCM_8BIT) ? 8 : 16));
                 return audioRecord.getState() == AudioRecord.STATE_INITIALIZED;
             }
             return false;
