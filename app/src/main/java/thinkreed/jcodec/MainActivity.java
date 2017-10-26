@@ -9,8 +9,6 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private AudioCapture audioCapture;
-
     // Used to load the 'native-lib' library on application startup.
     static {
         System.loadLibrary("native-lib");
@@ -25,8 +23,6 @@ public class MainActivity extends AppCompatActivity {
         // Example of a call to a native method
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText(stringFromJNI());
-        audioCapture = AudioCapture.getInstance();
-        audioCapture.start();
     }
 
     private void obtainPermission() {
@@ -67,7 +63,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        audioCapture.stop();
         super.onDestroy();
     }
 }

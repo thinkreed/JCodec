@@ -1,4 +1,4 @@
-package thinkreed.jcodec;
+package thinkreed.jcodec.audio;
 
 /**
  * Created by thinkreed on 2017/10/23.

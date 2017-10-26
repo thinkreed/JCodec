@@ -1,4 +1,4 @@
-package thinkreed.jcodec;
+package thinkreed.jcodec.audio;
 
 import android.media.AudioFormat;
 import android.media.AudioTrack;

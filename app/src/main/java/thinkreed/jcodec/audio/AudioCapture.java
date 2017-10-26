@@ -1,4 +1,4 @@
-package thinkreed.jcodec;
+package thinkreed.jcodec.audio;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -8,6 +8,8 @@ import android.util.Log;
 
 import java.io.FileOutputStream;
 import java.util.concurrent.Future;
+
+import thinkreed.jcodec.TaskExecutor;
 
 /**
  * Created by thinkreed on 2017/10/18.

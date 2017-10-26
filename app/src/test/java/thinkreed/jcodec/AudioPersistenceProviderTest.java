@@ -3,6 +3,8 @@ package thinkreed.jcodec;
 import org.junit.Assert;
 import org.junit.Test;
 
+import thinkreed.jcodec.audio.AudioPersistenceProvider;
+
 /**
  * Created by thinkreed on 2017/10/22.
  */
