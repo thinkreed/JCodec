@@ -1,9 +1,5 @@
 package thinkreed.jcodec.audio;
 
-import android.media.AudioFormat;
-import android.media.AudioTrack;
-import android.util.Log;
-
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -11,11 +7,22 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import android.media.AudioFormat;
+import android.media.AudioTrack;
+import android.util.Log;
+
 /**
  * Created by thinkreed on 2017/10/25.
  */
 
 public class WavExtractor {
+
+    private static class Holder {
+        static final WavExtractor instance = new WavExtractor();
+    }
+
+    public static final int STATE_INITIALIZED = 0;
+    public static final int STATE_UNINITIALIZED = 1;
     private WavFileHeader wavFileHeader;
     private DataInputStream dataInputStream;
     private FileInputStream fileInputStream;
@@ -23,6 +30,15 @@ public class WavExtractor {
     private byte[] shortField = new byte[2];
     private int audioMinBufferSize;
     private PcmFrame pcmFrame;
+    private int state = STATE_UNINITIALIZED;
+
+    private WavExtractor() {
+
+    }
+
+    public static WavExtractor getInstance() {
+        return Holder.instance;
+    }
 
     public void prepare(String path) {
         release();
@@ -35,12 +51,18 @@ public class WavExtractor {
                             AudioFormat.CHANNEL_OUT_STEREO, wavFileHeader.getBitsPerSample() ==
                             16 ? AudioFormat.ENCODING_PCM_16BIT : AudioFormat.ENCODING_PCM_8BIT);
             pcmFrame = PcmFrame.create(audioMinBufferSize);
+            state = STATE_INITIALIZED;
         } catch (FileNotFoundException e) {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
 
     public PcmFrame advance() {
+
+        if (state != STATE_INITIALIZED) {
+            return PcmFrame.create(1);
+        }
+
         try {
             int bytesRead = dataInputStream.read(pcmFrame.getData(), 0, audioMinBufferSize);
             pcmFrame.setSize(bytesRead > 0 ? bytesRead : -1);
@@ -61,6 +83,8 @@ public class WavExtractor {
             if (dataInputStream != null) {
                 dataInputStream.close();
             }
+
+            state = STATE_UNINITIALIZED;
         } catch (IOException e) {
             e.printStackTrace();
             Log.e("thinkreed", "close input stream error");
@@ -70,6 +94,10 @@ public class WavExtractor {
             dataInputStream = null;
         }
 
+    }
+
+    public int getState() {
+        return this.state;
     }
 
     private void readWavFileHeader() {
