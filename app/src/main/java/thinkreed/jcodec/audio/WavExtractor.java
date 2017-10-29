@@ -14,22 +14,33 @@ import android.util.Log;
 /**
  * Created by thinkreed on 2017/10/25.
  */
-
 public class WavExtractor {
 
     private static class Holder {
-        static final WavExtractor instance = new WavExtractor();
+
+        static final WavExtractor INSTANCE = new WavExtractor();
     }
 
     public static final int STATE_INITIALIZED = 0;
+
     public static final int STATE_UNINITIALIZED = 1;
+
+    private static final int LENGTH_INT_FIELD = 4;
+
     private WavFileHeader wavFileHeader;
+
     private DataInputStream dataInputStream;
+
     private FileInputStream fileInputStream;
+
     private byte[] intField = new byte[4];
+
     private byte[] shortField = new byte[2];
+
     private int audioMinBufferSize;
+
     private PcmFrame pcmFrame;
+
     private int state = STATE_UNINITIALIZED;
 
     private WavExtractor() {
@@ -37,19 +48,21 @@ public class WavExtractor {
     }
 
     public static WavExtractor getInstance() {
-        return Holder.instance;
+
+        return Holder.INSTANCE;
     }
 
     public void prepare(String path) {
+
         release();
         try {
             fileInputStream = new FileInputStream(path);
             dataInputStream = new DataInputStream(fileInputStream);
             readWavFileHeader();
             audioMinBufferSize = AudioTrack.getMinBufferSize(wavFileHeader.getSampleRate(),
-                    wavFileHeader.getNumChannels() == 1 ? AudioFormat.CHANNEL_OUT_MONO :
-                            AudioFormat.CHANNEL_OUT_STEREO, wavFileHeader.getBitsPerSample() ==
-                            16 ? AudioFormat.ENCODING_PCM_16BIT : AudioFormat.ENCODING_PCM_8BIT);
+                wavFileHeader.getNumChannels() == 1 ? AudioFormat.CHANNEL_OUT_MONO :
+                    AudioFormat.CHANNEL_OUT_STEREO, wavFileHeader.getBitsPerSample() ==
+                    16 ? AudioFormat.ENCODING_PCM_16BIT : AudioFormat.ENCODING_PCM_8BIT);
             pcmFrame = PcmFrame.create(audioMinBufferSize);
             state = STATE_INITIALIZED;
         } catch (FileNotFoundException e) {
@@ -75,6 +88,7 @@ public class WavExtractor {
     }
 
     public void release() {
+
         try {
             if (fileInputStream != null) {
                 fileInputStream.close();
@@ -97,10 +111,12 @@ public class WavExtractor {
     }
 
     public int getState() {
+
         return this.state;
     }
 
     private void readWavFileHeader() {
+
         wavFileHeader = WavFileHeader.create();
         try {
             // ChunkID
@@ -156,16 +172,19 @@ public class WavExtractor {
     }
 
     private void read4Bytes() throws IOException {
-        for (int i = 0; i < 4; i++) {
+
+        for (int i = 0; i < LENGTH_INT_FIELD; i++) {
             dataInputStream.readByte();
         }
     }
 
     private static short byteArrayToShort(byte[] b) {
+
         return ByteBuffer.wrap(b).order(ByteOrder.LITTLE_ENDIAN).getShort();
     }
 
     private static int byteArrayToInt(byte[] b) {
+
         return ByteBuffer.wrap(b).order(ByteOrder.LITTLE_ENDIAN).getInt();
     }
 }
