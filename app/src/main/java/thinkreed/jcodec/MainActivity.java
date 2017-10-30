@@ -1,6 +1,7 @@
 package thinkreed.jcodec;
 
 import android.Manifest;
+import android.Manifest.permission;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -28,31 +29,32 @@ public class MainActivity extends AppCompatActivity {
     private void obtainPermission() {
         if (checkPermission()) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission
-                            .READ_PHONE_STATE,
-                            Manifest.permission.READ_LOGS, Manifest.permission
-                            .ACCESS_NETWORK_STATE, Manifest
-                            .permission.INTERNET, Manifest.permission.ACCESS_WIFI_STATE, Manifest
-                            .permission.RECORD_AUDIO, Manifest.permission.READ_EXTERNAL_STORAGE},
-                    0);
+                    .READ_PHONE_STATE,
+                    Manifest.permission.READ_LOGS, Manifest.permission
+                    .ACCESS_NETWORK_STATE, Manifest
+                    .permission.INTERNET, Manifest.permission.ACCESS_WIFI_STATE, Manifest
+                    .permission.RECORD_AUDIO, Manifest.permission.READ_EXTERNAL_STORAGE, permission.CAMERA},
+                0);
         }
     }
 
     private boolean checkPermission() {
         return ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.READ_PHONE_STATE)
-                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.READ_LOGS)
-                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_NETWORK_STATE)
-                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_WIFI_STATE)
-                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED;
+            Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+            Manifest.permission.READ_PHONE_STATE)
+            != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+            Manifest.permission.READ_LOGS)
+            != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+            Manifest.permission.ACCESS_NETWORK_STATE)
+            != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+            Manifest.permission.ACCESS_WIFI_STATE)
+            != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+            Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+            Manifest.permission.READ_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,
+            permission.CAMERA) != PackageManager.PERMISSION_GRANTED;
     }
 
     /**
