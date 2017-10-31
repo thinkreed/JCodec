@@ -2,11 +2,13 @@ package thinkreed.jcodec;
 
 import android.Manifest;
 import android.Manifest.permission;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
+import thinkreed.jcodec.video.VideoCaptureTestActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,6 +26,12 @@ public class MainActivity extends AppCompatActivity {
         // Example of a call to a native method
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText(stringFromJNI());
+        startActivity(VideoCaptureTestActivity.class);
+    }
+
+    private void startActivity(Class<?> cls) {
+        Intent intent = new Intent(this, cls);
+        startActivity(intent);
     }
 
     private void obtainPermission() {
