@@ -133,8 +133,9 @@ public class VideoCapture extends StateCallback {
     }
 
     public void destroy() {
-        closeCamera();
+        textureView = null;
         stopHandlerThread();
+        closeCamera();
     }
 
     private void closeCamera() {
