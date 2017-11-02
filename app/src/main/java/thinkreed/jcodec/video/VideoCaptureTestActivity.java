@@ -8,6 +8,7 @@ import android.view.TextureView;
 import android.view.TextureView.SurfaceTextureListener;
 import android.view.View;
 
+import android.view.View.OnClickListener;
 import thinkreed.jcodec.R;
 
 /**
@@ -25,6 +26,12 @@ public class VideoCaptureTestActivity extends AppCompatActivity implements Surfa
         setContentView(R.layout.activity_video_test);
         previewView = (TextureView) findViewById(R.id.preview_view);
         btnCapture = findViewById(R.id.btn_capture);
+        btnCapture.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                VideoCapture.getInstance().takePicture();
+            }
+        });
     }
 
     @Override

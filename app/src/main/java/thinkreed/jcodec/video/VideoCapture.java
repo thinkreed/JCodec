@@ -4,10 +4,12 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCaptureSession.CaptureCallback;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraDevice.StateCallback;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -38,6 +40,7 @@ public class VideoCapture extends StateCallback {
     private CaptureRequest.Builder builder;
     private CameraCaptureSession session;
     private CaptureRequest request;
+    private CaptureCallback captureCallback;
 
     private static class Holder {
 
@@ -65,6 +68,7 @@ public class VideoCapture extends StateCallback {
         handlerThread = new HandlerThread("camera thread");
         handlerThread.start();
         handler = new Handler(handlerThread.getLooper());
+        captureCallback = new CaptureSessionCaptureCallback();
     }
 
     public static VideoCapture getInstance() {
@@ -84,7 +88,7 @@ public class VideoCapture extends StateCallback {
         try {
             builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             request = builder.build();
-            session.setRepeatingRequest(request, new CaptureSessionCaptureCallback(), handler);
+            session.setRepeatingRequest(request, captureCallback, handler);
             state = STATE_CAMERA_READY;
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -111,7 +115,7 @@ public class VideoCapture extends StateCallback {
 
     private void getSurface() {
         SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
-        surfaceTexture.setDefaultBufferSize(300, 300);
+        surfaceTexture.setDefaultBufferSize(textureView.getWidth(), textureView.getHeight());
         surface = new Surface(surfaceTexture);
     }
 
@@ -132,9 +136,27 @@ public class VideoCapture extends StateCallback {
         openCamera();
     }
 
+    public void takePicture() {
+        if (state != STATE_CAMERA_READY) {
+            return;
+        }
+        lockFocus();
+    }
+
+    private void lockFocus() {
+        try {
+            builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+            session.capture(builder.build(), captureCallback, handler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+            Log.e("thinkreed", e.getMessage());
+        }
+    }
+
     public void destroy() {
         textureView = null;
         stopHandlerThread();
+        manager = null;
         closeCamera();
     }
 
@@ -208,6 +230,9 @@ public class VideoCapture extends StateCallback {
     }
 
     private void stopHandlerThread() {
+        if (handlerThread == null) {
+            return;
+        }
         handlerThread.quitSafely();
         try {
             handlerThread.join();

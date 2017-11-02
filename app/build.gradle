@@ -59,8 +59,8 @@ dependencies {
     })
 
     // bugly
-    compile 'com.tencent.bugly:crashreport:latest.release'
-    compile 'com.tencent.bugly:nativecrashreport:latest.release'
+    compile 'com.tencent.bugly:crashreport:2.6.5'
+    compile 'com.tencent.bugly:nativecrashreport:3.3.1'
     // leak canary
     debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5.4'
     releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
