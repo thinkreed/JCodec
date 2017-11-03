@@ -1,6 +1,7 @@
 package thinkreed.jcodec.video;
 
 import android.content.Context;
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -11,6 +12,9 @@ import android.hardware.camera2.CameraDevice.StateCallback;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
+import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -24,6 +28,8 @@ import java.util.Arrays;
  */
 
 public class VideoCapture extends StateCallback {
+
+    private static final String TAG = "VideoCapture";
 
     private static final int STATE_UNINITIALIZED = 0;
     private static final int STATE_CAMERA_FOUND = 1;
@@ -41,6 +47,7 @@ public class VideoCapture extends StateCallback {
     private CameraCaptureSession session;
     private CaptureRequest request;
     private CaptureCallback captureCallback;
+    private ImageReader imageReader;
 
     private static class Holder {
 
@@ -61,6 +68,47 @@ public class VideoCapture extends StateCallback {
     }
 
     private static class CaptureSessionCaptureCallback extends CameraCaptureSession.CaptureCallback {
+
+        @Override
+        public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request,
+            @NonNull CaptureResult partialResult) {
+            super.onCaptureProgressed(session, request, partialResult);
+            Log.d(TAG, "onCaptureProgressed state is " + partialResult.get(CaptureResult.CONTROL_AF_STATE));
+        }
+
+        @Override
+        public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request,
+            @NonNull TotalCaptureResult result) {
+            super.onCaptureCompleted(session, request, result);
+            Log.d(TAG, "onCaptureCompleted state is " + result.get(CaptureResult.CONTROL_AF_STATE));
+        }
+    }
+
+    private static class OnImageAvailableListener implements ImageReader.OnImageAvailableListener {
+
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+
+        }
+    }
+
+    private void captureStillPicture() {
+        try {
+            final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice
+                .TEMPLATE_STILL_CAPTURE);
+            captureBuilder.addTarget(imageReader.getSurface());
+            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            session.stopRepeating();
+            session.abortCaptures();
+            session.capture(captureBuilder.build(), captureCallback, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+            Log.e(TAG, "CameraAccessException in captureStillPicture, message is " + e.getMessage());
+        }
+
+    }
+
+    private void unLockFocus() {
 
     }
 
@@ -107,7 +155,8 @@ public class VideoCapture extends StateCallback {
         try {
             builder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             builder.addTarget(surface);
-            cameraDevice.createCaptureSession(Arrays.asList(surface), new CaptureSessionStateCallback(), null);
+            cameraDevice.createCaptureSession(Arrays.asList(surface, imageReader.getSurface()), new CaptureSessionStateCallback()
+                , null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -131,6 +180,8 @@ public class VideoCapture extends StateCallback {
 
     public void prepare(TextureView textureView) {
         this.textureView = textureView;
+        imageReader = ImageReader.newInstance(textureView.getWidth(), textureView.getHeight(), ImageFormat.JPEG, 2);
+        imageReader.setOnImageAvailableListener(new OnImageAvailableListener(), handler);
         manager = (CameraManager) textureView.getContext().getSystemService(Context.CAMERA_SERVICE);
         getAvailableCamera();
         openCamera();
