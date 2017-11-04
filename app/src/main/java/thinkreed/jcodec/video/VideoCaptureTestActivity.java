@@ -51,6 +51,7 @@ public class VideoCaptureTestActivity extends AppCompatActivity implements Surfa
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         VideoCapture.getInstance().prepare(previewView);
+        VideoCapture.getInstance().createStillPictureFile(getExternalFilesDir(null) + "/pic.jpg");
     }
 
     @Override

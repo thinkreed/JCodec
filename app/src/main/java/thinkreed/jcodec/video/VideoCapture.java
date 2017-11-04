@@ -14,6 +14,7 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
+import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -21,6 +22,10 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
@@ -46,8 +51,8 @@ public class VideoCapture extends StateCallback {
     private CaptureRequest.Builder builder;
     private CameraCaptureSession session;
     private CaptureRequest request;
-    private CaptureCallback captureCallback;
     private ImageReader imageReader;
+    private File stillPictureFile;
 
     private static class Holder {
 
@@ -67,29 +72,54 @@ public class VideoCapture extends StateCallback {
         }
     }
 
-    private static class CaptureSessionCaptureCallback extends CameraCaptureSession.CaptureCallback {
-
-        @Override
-        public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request,
-            @NonNull CaptureResult partialResult) {
-            super.onCaptureProgressed(session, request, partialResult);
-            Log.d(TAG, "onCaptureProgressed state is " + partialResult.get(CaptureResult.CONTROL_AF_STATE));
-        }
-
-        @Override
-        public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request,
-            @NonNull TotalCaptureResult result) {
-            super.onCaptureCompleted(session, request, result);
-            Log.d(TAG, "onCaptureCompleted state is " + result.get(CaptureResult.CONTROL_AF_STATE));
-        }
-    }
-
-    private static class OnImageAvailableListener implements ImageReader.OnImageAvailableListener {
+    private final class OnImageAvailableListener implements ImageReader.OnImageAvailableListener {
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-
+            handler.post(ImageSaver.create(reader.acquireNextImage(), stillPictureFile));
         }
+    }
+
+    private static class ImageSaver implements Runnable {
+
+        public static ImageSaver create(Image image, File file) {
+            return new ImageSaver(image, file);
+        }
+
+        private final Image image;
+        private File file;
+
+        private ImageSaver(Image image, File file) {
+            this.image = image;
+            this.file = file;
+        }
+
+        @Override
+        public void run() {
+            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+            byte[] bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
+            FileOutputStream output = null;
+            try {
+                output = new FileOutputStream(file);
+                output.write(bytes);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                image.close();
+                if (null != output) {
+                    try {
+                        output.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    public void createStillPictureFile(String path) {
+        this.stillPictureFile = new File(path);
     }
 
     private void captureStillPicture() {
@@ -100,7 +130,13 @@ public class VideoCapture extends StateCallback {
             captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             session.stopRepeating();
             session.abortCaptures();
-            session.capture(captureBuilder.build(), captureCallback, null);
+            session.capture(captureBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request,
+                    @NonNull TotalCaptureResult result) {
+                    unLockFocus();
+                }
+            }, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
             Log.e(TAG, "CameraAccessException in captureStillPicture, message is " + e.getMessage());
@@ -109,6 +145,14 @@ public class VideoCapture extends StateCallback {
     }
 
     private void unLockFocus() {
+        builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
+        try {
+            session.setRepeatingRequest(builder.build(), new CaptureCallback() {
+            }, handler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+            Log.e(TAG, "CameraAccessException in unLockFocus, message is " + e.getMessage());
+        }
 
     }
 
@@ -116,7 +160,6 @@ public class VideoCapture extends StateCallback {
         handlerThread = new HandlerThread("camera thread");
         handlerThread.start();
         handler = new Handler(handlerThread.getLooper());
-        captureCallback = new CaptureSessionCaptureCallback();
     }
 
     public static VideoCapture getInstance() {
@@ -136,7 +179,16 @@ public class VideoCapture extends StateCallback {
         try {
             builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             request = builder.build();
-            session.setRepeatingRequest(request, captureCallback, handler);
+            session.setRepeatingRequest(request, new CaptureCallback() {
+                @Override
+                public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request,
+                    @NonNull CaptureResult partialResult) {
+                    Integer aeState = partialResult.get(CaptureResult.CONTROL_AE_STATE);
+                    if (aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                        captureStillPicture();
+                    }
+                }
+            }, handler);
             state = STATE_CAMERA_READY;
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -155,8 +207,8 @@ public class VideoCapture extends StateCallback {
         try {
             builder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             builder.addTarget(surface);
-            cameraDevice.createCaptureSession(Arrays.asList(surface, imageReader.getSurface()), new CaptureSessionStateCallback()
-                , null);
+            cameraDevice.createCaptureSession(Arrays.asList(surface, imageReader.getSurface()),
+                new CaptureSessionStateCallback(), null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -197,7 +249,12 @@ public class VideoCapture extends StateCallback {
     private void lockFocus() {
         try {
             builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
-            session.capture(builder.build(), captureCallback, handler);
+            session.capture(builder.build(), new CaptureCallback() {
+                @Override
+                public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request,
+                    @NonNull CaptureResult partialResult) {
+                }
+            }, handler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
             Log.e("thinkreed", e.getMessage());
